@@ -1,3 +1,10 @@
+## Notes for Kolleno users
+This is a fork of the Github Runner Images repository. This repo contains the configurations needed to replicate the OS versions used by GH Actions. The original version makes use of Azure for image building.
+
+Kolleno uses the Packer defenitions to build our own versions of the OS images using Proxmox and including Cloud-Init configurations to manage virtual machines via SSH.
+
+The goal is to fully replicate the OS env used by GH runners, but also extend the functionality to make management of the machines a breeze.
+
 
 # GitHub Actions Runner Images
 
