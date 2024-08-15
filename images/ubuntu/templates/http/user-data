@@ -2,32 +2,44 @@
 autoinstall:
   version: 1
   locale: en_US
+  refresh-installer:
+      update: false
   keyboard:
-    layout: us
+    layout: de
   ssh:
     install-server: true
     allow-pw: true
     disable_root: true
     ssh_quiet_keygen: true
     allow_public_ssh_keys: true
-  packages:
-    - qemu-guest-agent
-    - sudo
   storage:
     layout:
       name: direct
     swap:
       size: 0
+  network:
+    network:
+      version: 2
+      ethernets:
+        ens18:
+          dhcp4: yes
   user-data:
-    package_upgrade: false
+    package_upgrade: true
     timezone: Africa/Johannesburg
+    ssh_pwauth: true
     users:
-      - name: kris
+      - name: admin
         groups: [adm, sudo]
         lock-passwd: false
         sudo: ALL=(ALL) NOPASSWD:ALL
         shell: /bin/bash
         passwd: supersecretpassword
-        # - or -
-        # ssh_authorized_keys:
-        #   - your-ssh-key
+  packages:
+    - qemu-guest-agent
+    - sudo
+    - vim
+    - zip
+    - unzip
+  late-commands:
+    - curtin in-target -- apt-get update
+    - curtin in-target -- apt-get install qemu-guest-agent -y
