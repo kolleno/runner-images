@@ -55,6 +55,11 @@ variable "helper_script_folder" {
   default = "/imagegeneration/helpers"
 }
 
+variable "imagedata_file" {
+  type    = string
+  default = "/imagegeneration/imagedata.json"
+}
+
 source "proxmox-iso" "pkr-ubuntu-jammy-gh" {
   proxmox_url               = "${var.proxmox_api_url}"
   username                  = "${var.proxmox_api_token_id}"
