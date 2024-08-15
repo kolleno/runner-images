@@ -1,3 +1,25 @@
+packer {
+  required_plugins {
+    proxmox = {
+      version = ">= 1.1.3"
+      source  = "github.com/hashicorp/proxmox"
+    }
+  }
+}
+
+variable "proxmox_api_url" {
+  type = string
+}
+
+variable "proxmox_api_token_id" {
+  type = string
+}
+
+variable "proxmox_api_token_secret" {
+  type      = string
+  sensitive = true
+}
+
 variable "helper_script_folder" {
   type    = string
   default = "/imagegeneration/helpers"
