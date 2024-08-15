@@ -7,6 +7,17 @@ packer {
   }
 }
 
+variable "ssh_username" {
+  type      = string
+  default   = "kris"
+}
+
+variable "ssh_password" {
+  type      = string
+  default   = "supersecretpassword"
+  sensitive = true
+}
+
 variable "proxmox_api_url" {
   type = string
 }
@@ -18,6 +29,21 @@ variable "proxmox_api_token_id" {
 variable "proxmox_api_token_secret" {
   type      = string
   sensitive = true
+}
+
+variable "image_version" {
+  type    = string
+  default = "dev"
+}
+
+variable "dockerhub_login" {
+  type    = string
+  default = "${env("DOCKERHUB_LOGIN")}"
+}
+
+variable "dockerhub_password" {
+  type    = string
+  default = "${env("DOCKERHUB_PASSWORD")}"
 }
 
 variable "helper_script_folder" {
@@ -48,100 +74,88 @@ variable "install_password" {
 
 
 # Resource Definiation for the VM Template
-source "proxmox" "ubuntu-server-focal" {
+  source "proxmox-iso" "pkr-ubuntu-jammy-1" {
+    proxmox_url               = "${var.proxmox_api_url}"
+    username                  = "${var.proxmox_api_token_id}"
+    token                     = "${var.proxmox_api_token_secret}"
+    insecure_skip_tls_verify  = false
 
-  # Proxmox Connection Settings
-  proxmox_url = "${var.proxmox_api_url}"
-  username = "${var.proxmox_api_token_id}"
-  token = "${var.proxmox_api_token_secret}"
-  # (Optional) Skip TLS Verification
-  # insecure_skip_tls_verify = true
+    node                      = "prx-prod-1"
+    vm_id                     = "90001"
+    vm_name                   = "pkr-ubuntu-jammy-1"
+    template_description      = "Ubuntu 22.04.6 LTS"
 
-  # VM General Settings
-  node = "your-proxmox-node"
-  vm_id = "100"
-  vm_name = "ubuntu-server-focal"
-  template_description = "Ubuntu Server Focal Image"
+    iso_file                  = "local:iso/ubuntu-22.04.6-live-server-amd64.iso"
+    iso_storage_pool          = "local"
+    unmount_iso               = true
+    qemu_agent                = true
 
-  # VM OS Settings
-  # (Option 1) Local ISO File
-  iso_file = "local:iso/ubuntu-20.04.6-live-server-amd64.iso"
-  # - or -
-  # (Option 2) Download ISO
-  # iso_url = "https://releases.ubuntu.com/20.04/ubuntu-20.04.3-live-server-amd64.iso"
-  # iso_checksum = "f8e3086f3cea0fb3fefb29937ab5ed9d19e767079633960ccb50e76153effc98"
-  iso_storage_pool = "local"
-  unmount_iso = true
+    scsi_controller           = "virtio-scsi-pci"
 
-  # VM System Settings
-  qemu_agent = true
+    cores                     = "1"
+    sockets                   = "1"
+    memory                    = "2048"
 
-  # VM Hard Disk Settings
-  scsi_controller = "virtio-scsi-pci"
+    cloud_init                = true
+    cloud_init_storage_pool   = "local-lvm"
 
-  disks {
-    disk_size = "20G"
-    format = "qcow2"
-    storage_pool = "local-lvm"
-    storage_pool_type = "lvm"
-    type = "virtio"
+    vga {
+      type                    = "virtio"
+    }
+
+    disks {
+      disk_size               = "20G"
+      format                  = "raw"
+      storage_pool            = "local-lvm"
+      type                    = "virtio"
+    }
+
+    network_adapters {
+      model                   = "virtio"
+      bridge                  = "vmbr1"
+      firewall                = "false"
+    }
+
+    boot_command = [
+      "<esc><wait>",
+      "e<wait>",
+      "<down><down><down><end>",
+      "<bs><bs><bs><bs><wait>",
+      "autoinstall ds=nocloud-net\\;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ ---<wait>",
+      "<f10><wait>"
+    ]
+
+    boot                      = "c"
+    boot_wait                 = "6s"
+    communicator              = "ssh"
+
+    http_directory            = "90001-pkr-ubuntu-jammy-1/http"
+
+    ssh_username              = "${var.ssh_username}"
+    ssh_password              = "${var.ssh_password}"
+
+    # Raise the timeout, when installation takes longer
+    ssh_timeout               = "30m"
+    ssh_pty                   = true
+    ssh_handshake_attempts    = 15
   }
-
-  # VM CPU Settings
-  cores = "1"
-
-  # VM Memory Settings
-  memory = "2048"
-
-  # VM Network Settings
-  network_adapters {
-    model = "virtio"
-    bridge = "vmbr0"
-    firewall = "false"
-  }
-
-  # VM Cloud-Init Settings
-  cloud_init = true
-  cloud_init_storage_pool = "local-lvm"
-
-  # PACKER Boot Commands
-  boot_command = [
-    "<esc><wait><esc><wait>",
-    "<f6><wait><esc><wait>",
-    "<bs><bs><bs><bs><bs>",
-    "autoinstall ds=nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ ",
-    "--- <enter>"
-  ]
-  boot = "c"
-  boot_wait = "5s"
-
-  # PACKER Autoinstall Settings
-  http_directory = "http"
-  # (Optional) Bind IP Address and Port
-  # http_bind_address = "0.0.0.0"
-  # http_port_min = 8802
-  # http_port_max = 8802
-
-  ssh_username = "kris"
-
-  # (Option 1) Add your Password here
-  ssh_password = "supersecretpassword"
-  # - or -
-  # (Option 2) Add your Private SSH KEY file here
-  # ssh_private_key_file = "~/.ssh/id_rsa"
-
-  # Raise the timeout, when installation takes longer
-  ssh_timeout = "20m"
-}
 
 build {
-  name = "ubuntu-server-focal"
-  sources = ["source.proxmox.ubuntu-server-focal"]
+  name = "pkr-ubuntu-jammy-1"
+  sources = [
+    "proxmox-iso.pkr-ubuntu-jammy-1"
+  ]
+
+  # Waiting for Cloud-Init to finish
+  provisioner "shell" {
+    inline = ["cloud-init status --wait"]
+  }
 
   # Provisioning the VM Template for Cloud-Init Integration in Proxmox #1
   provisioner "shell" {
+    execute_command = "echo -e '<user>' | sudo -S -E bash '{{ .Path }}'"
     inline = [
-      "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do echo 'Waiting for cloud-init...'; sleep 1; done",
+      "echo 'Starting Stage: Provisioning the VM Template for Cloud-Init Integration in Proxmox'",
       "sudo rm /etc/ssh/ssh_host_*",
       "sudo truncate -s 0 /etc/machine-id",
       "sudo apt -y autoremove --purge",
@@ -149,25 +163,25 @@ build {
       "sudo apt -y autoclean",
       "sudo cloud-init clean",
       "sudo rm -f /etc/cloud/cloud.cfg.d/subiquity-disable-cloudinit-networking.cfg",
-      "sudo sync"
+      "sudo rm -f /etc/netplan/00-installer-config.yaml",
+      "sudo sync",
+      "echo 'Done Stage: Provisioning the VM Template for Cloud-Init Integration in Proxmox'"
     ]
   }
 
   # Provisioning the VM Template for Cloud-Init Integration in Proxmox #2
   provisioner "file" {
-    source = "files/99-pve.cfg"
+    source      = "90001-pkr-ubuntu-jammy-1/files/99-pve.cfg"
     destination = "/tmp/99-pve.cfg"
   }
-
-  # Provisioning the VM Template for Cloud-Init Integration in Proxmox #3
   provisioner "shell" {
-    inline = [ "sudo cp /tmp/99-pve.cfg /etc/cloud/cloud.cfg.d/99-pve.cfg" ]
+    inline = ["sudo cp /tmp/99-pve.cfg /etc/cloud/cloud.cfg.d/99-pve.cfg"]
   }
 
   # Start doing the GH stuff to get image ready
   provisioner "shell" {
     execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    inline          = ["mkdir ${var.image_folder}", "chmod 777 ${var.image_folder}"]
+    inline = ["mkdir ${var.image_folder}", "chmod 777 ${var.image_folder}"]
   }
 
   provisioner "file" {
@@ -181,9 +195,9 @@ build {
   }
 
   provisioner "shell" {
-    environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}","DEBIAN_FRONTEND=noninteractive"]
-    execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    scripts          = [
+    environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}", "DEBIAN_FRONTEND=noninteractive"]
+    execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
+    scripts = [
       "${path.root}/../scripts/build/install-ms-repos.sh",
       "${path.root}/../scripts/build/configure-apt-sources.sh",
       "${path.root}/../scripts/build/configure-apt.sh"
@@ -202,7 +216,7 @@ build {
 
   provisioner "file" {
     destination = "${var.image_folder}"
-    sources     = [
+    sources = [
       "${path.root}/../assets/post-gen",
       "${path.root}/../scripts/tests",
       "${path.root}/../scripts/docs-gen"
@@ -221,7 +235,7 @@ build {
 
   provisioner "shell" {
     execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    inline          = [
+    inline = [
       "mv ${var.image_folder}/docs-gen ${var.image_folder}/SoftwareReport",
       "mv ${var.image_folder}/post-gen ${var.image_folder}/post-generation"
     ]
@@ -229,38 +243,53 @@ build {
 
   provisioner "shell" {
     environment_vars = ["IMAGE_VERSION=${var.image_version}", "IMAGEDATA_FILE=${var.imagedata_file}"]
-    execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    scripts          = ["${path.root}/../scripts/build/configure-image-data.sh"]
+    execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
+    scripts = ["${path.root}/../scripts/build/configure-image-data.sh"]
   }
 
   provisioner "shell" {
-    environment_vars = ["IMAGE_VERSION=${var.image_version}", "IMAGE_OS=${var.image_os}", "HELPER_SCRIPTS=${var.helper_script_folder}"]
-    execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    scripts          = ["${path.root}/../scripts/build/configure-environment.sh"]
+    environment_vars = [
+      "IMAGE_VERSION=${var.image_version}", "IMAGE_OS=${var.image_os}", "HELPER_SCRIPTS=${var.helper_script_folder}"
+    ]
+    execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
+    scripts = ["${path.root}/../scripts/build/configure-environment.sh"]
   }
 
   provisioner "shell" {
-    environment_vars = ["DEBIAN_FRONTEND=noninteractive", "HELPER_SCRIPTS=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"]
-    execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    scripts          = ["${path.root}/../scripts/build/install-apt-vital.sh"]
+    environment_vars = [
+      "DEBIAN_FRONTEND=noninteractive", "HELPER_SCRIPTS=${var.helper_script_folder}",
+      "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"
+    ]
+    execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
+    scripts = ["${path.root}/../scripts/build/install-apt-vital.sh"]
   }
 
   provisioner "shell" {
-    environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"]
-    execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    scripts          = ["${path.root}/../scripts/build/install-powershell.sh"]
+    environment_vars = [
+      "HELPER_SCRIPTS=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"
+    ]
+    execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
+    scripts = ["${path.root}/../scripts/build/install-powershell.sh"]
   }
 
   provisioner "shell" {
-    environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"]
-    execute_command  = "sudo sh -c '{{ .Vars }} pwsh -f {{ .Path }}'"
-    scripts          = ["${path.root}/../scripts/build/Install-PowerShellModules.ps1", "${path.root}/../scripts/build/Install-PowerShellAzModules.ps1"]
+    environment_vars = [
+      "HELPER_SCRIPTS=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"
+    ]
+    execute_command = "sudo sh -c '{{ .Vars }} pwsh -f {{ .Path }}'"
+    scripts = [
+      "${path.root}/../scripts/build/Install-PowerShellModules.ps1",
+      "${path.root}/../scripts/build/Install-PowerShellAzModules.ps1"
+    ]
   }
 
   provisioner "shell" {
-    environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}", "DEBIAN_FRONTEND=noninteractive"]
-    execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    scripts          = [
+    environment_vars = [
+      "HELPER_SCRIPTS=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}",
+      "DEBIAN_FRONTEND=noninteractive"
+    ]
+    execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
+    scripts = [
       "${path.root}/../scripts/build/install-actions-cache.sh",
       "${path.root}/../scripts/build/install-runner-package.sh",
       "${path.root}/../scripts/build/install-apt-common.sh",
@@ -329,51 +358,63 @@ build {
   }
 
   provisioner "shell" {
-    environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}", "DOCKERHUB_LOGIN=${var.dockerhub_login}", "DOCKERHUB_PASSWORD=${var.dockerhub_password}"]
-    execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    scripts          = ["${path.root}/../scripts/build/install-docker.sh"]
+    environment_vars = [
+      "HELPER_SCRIPTS=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}",
+      "DOCKERHUB_LOGIN=${var.dockerhub_login}", "DOCKERHUB_PASSWORD=${var.dockerhub_password}"
+    ]
+    execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
+    scripts = ["${path.root}/../scripts/build/install-docker.sh"]
   }
 
   provisioner "shell" {
-    environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"]
-    execute_command  = "sudo sh -c '{{ .Vars }} pwsh -f {{ .Path }}'"
-    scripts          = ["${path.root}/../scripts/build/Install-Toolset.ps1", "${path.root}/../scripts/build/Configure-Toolset.ps1"]
+    environment_vars = [
+      "HELPER_SCRIPTS=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"
+    ]
+    execute_command = "sudo sh -c '{{ .Vars }} pwsh -f {{ .Path }}'"
+    scripts = [
+      "${path.root}/../scripts/build/Install-Toolset.ps1", "${path.root}/../scripts/build/Configure-Toolset.ps1"
+    ]
   }
 
   provisioner "shell" {
-    environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"]
-    execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    scripts          = ["${path.root}/../scripts/build/install-pipx-packages.sh"]
+    environment_vars = [
+      "HELPER_SCRIPTS=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"
+    ]
+    execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
+    scripts = ["${path.root}/../scripts/build/install-pipx-packages.sh"]
   }
 
   provisioner "shell" {
-    environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}", "DEBIAN_FRONTEND=noninteractive", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"]
-    execute_command  = "/bin/sh -c '{{ .Vars }} {{ .Path }}'"
-    scripts          = ["${path.root}/../scripts/build/install-homebrew.sh"]
+    environment_vars = [
+      "HELPER_SCRIPTS=${var.helper_script_folder}", "DEBIAN_FRONTEND=noninteractive",
+      "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"
+    ]
+    execute_command = "/bin/sh -c '{{ .Vars }} {{ .Path }}'"
+    scripts = ["${path.root}/../scripts/build/install-homebrew.sh"]
   }
 
   provisioner "shell" {
     environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}"]
-    execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    scripts          = ["${path.root}/../scripts/build/configure-snap.sh"]
+    execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
+    scripts = ["${path.root}/../scripts/build/configure-snap.sh"]
   }
 
   provisioner "shell" {
     execute_command   = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
     expect_disconnect = true
-    inline            = ["echo 'Reboot VM'", "sudo reboot"]
+    inline = ["echo 'Reboot VM'", "sudo reboot"]
   }
 
   provisioner "shell" {
     execute_command     = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
     pause_before        = "1m0s"
-    scripts             = ["${path.root}/../scripts/build/cleanup.sh"]
+    scripts = ["${path.root}/../scripts/build/cleanup.sh"]
     start_retry_timeout = "10m"
   }
 
   provisioner "shell" {
-    environment_vars    = ["IMAGE_VERSION=${var.image_version}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"]
-    inline              = [
+    environment_vars = ["IMAGE_VERSION=${var.image_version}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"]
+    inline = [
       "pwsh -Command Write-Host Running Generate-SoftwareReport.ps1 script",
       "pwsh -File ${var.image_folder}/SoftwareReport/Generate-SoftwareReport.ps1 -OutputDirectory ${var.image_folder}",
       "pwsh -Command Write-Host Running RunAll-Tests.ps1 script",
@@ -396,9 +437,12 @@ build {
   }
 
   provisioner "shell" {
-    environment_vars = ["HELPER_SCRIPT_FOLDER=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}", "IMAGE_FOLDER=${var.image_folder}"]
-    execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    scripts          = ["${path.root}/../scripts/build/configure-system.sh"]
+    environment_vars = [
+      "HELPER_SCRIPT_FOLDER=${var.helper_script_folder}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}",
+      "IMAGE_FOLDER=${var.image_folder}"
+    ]
+    execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
+    scripts = ["${path.root}/../scripts/build/configure-system.sh"]
   }
 
   provisioner "file" {
@@ -408,12 +452,11 @@ build {
 
   provisioner "shell" {
     execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    inline          = ["mkdir -p /etc/vsts", "cp /tmp/ubuntu2004.conf /etc/vsts/machine_instance.conf"]
+    inline = ["mkdir -p /etc/vsts", "cp /tmp/ubuntu2004.conf /etc/vsts/machine_instance.conf"]
   }
 
   provisioner "shell" {
     execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    inline          = ["sleep 30", "/usr/sbin/waagent -force -deprovision+user && export HISTSIZE=0 && sync"]
+    inline = ["sleep 30", "/usr/sbin/waagent -force -deprovision+user && export HISTSIZE=0 && sync"]
   }
-
 }
