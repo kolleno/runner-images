@@ -46,6 +46,11 @@ variable "dockerhub_password" {
   default = "${env("DOCKERHUB_PASSWORD")}"
 }
 
+variable "image_os" {
+  type    = string
+  default = "ubuntu20"
+}
+
 variable "helper_script_folder" {
   type    = string
   default = "/imagegeneration/helpers"
@@ -129,7 +134,7 @@ variable "install_password" {
     boot_wait                 = "6s"
     communicator              = "ssh"
 
-    http_directory            = "90001-pkr-ubuntu-jammy-1/http"
+    http_directory            = "http"
 
     ssh_username              = "${var.ssh_username}"
     ssh_password              = "${var.ssh_password}"
@@ -171,7 +176,7 @@ build {
 
   # Provisioning the VM Template for Cloud-Init Integration in Proxmox #2
   provisioner "file" {
-    source      = "90001-pkr-ubuntu-jammy-1/files/99-pve.cfg"
+    source      = "files/99-pve.cfg"
     destination = "/tmp/99-pve.cfg"
   }
   provisioner "shell" {
