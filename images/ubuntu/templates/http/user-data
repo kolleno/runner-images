@@ -33,7 +33,7 @@ autoinstall:
         lock-passwd: false
         sudo: ALL=(ALL) NOPASSWD:ALL
         shell: /bin/bash
-        passwd: supersecretpassword
+        passwd: $6$1SmmpoLOWy9y7qkk$GoiDZYZQ23DuVcQbWf7Q6cLk5D3IT064/JMLViLEm0cMDuu.zb3f9qah/.8a0viDrNyPoQubo1A/lG3QmcNfu0
   packages:
     - qemu-guest-agent
     - sudo
