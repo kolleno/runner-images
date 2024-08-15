@@ -79,18 +79,18 @@ variable "install_password" {
 
 
 # Resource Definiation for the VM Template
-  source "proxmox-iso" "pkr-ubuntu-jammy-1" {
+  source "proxmox-iso" "pkr-ubuntu-focal-1" {
     proxmox_url               = "${var.proxmox_api_url}"
     username                  = "${var.proxmox_api_token_id}"
     token                     = "${var.proxmox_api_token_secret}"
     insecure_skip_tls_verify  = true
 
-    node                      = "prx-prod-1"
+    node                      = "server"
     vm_id                     = "90001"
-    vm_name                   = "pkr-ubuntu-jammy-1"
-    template_description      = "Ubuntu 22.04.6 LTS"
+    vm_name                   = "pkr-ubuntu-focal-1"
+    template_description      = "Ubuntu 20.04.6 LTS"
 
-    iso_file                  = "local:iso/ubuntu-22.04.6-live-server-amd64.iso"
+    iso_file                  = "local:iso/ubuntu-20.04.6-live-server-amd64.iso"
     iso_storage_pool          = "local"
     unmount_iso               = true
     qemu_agent                = true
@@ -117,7 +117,7 @@ variable "install_password" {
 
     network_adapters {
       model                   = "virtio"
-      bridge                  = "vmbr1"
+      bridge                  = "vmbr0"
       firewall                = "false"
     }
 
@@ -146,9 +146,9 @@ variable "install_password" {
   }
 
 build {
-  name = "pkr-ubuntu-jammy-1"
+  name = "pkr-ubuntu-focal-1"
   sources = [
-    "proxmox-iso.pkr-ubuntu-jammy-1"
+    "proxmox-iso.pkr-ubuntu-focal-1"
   ]
 
   # Waiting for Cloud-Init to finish
