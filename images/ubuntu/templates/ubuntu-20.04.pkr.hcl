@@ -7,17 +7,6 @@ packer {
   }
 }
 
-variable "ssh_username" {
-  type      = string
-  default   = "kris"
-}
-
-variable "ssh_password" {
-  type      = string
-  default   = "supersecretpassword"
-  sensitive = true
-}
-
 variable "proxmox_api_url" {
   type = string
 }
@@ -135,13 +124,13 @@ variable "install_password" {
 
     http_directory            = "http"
 
-    ssh_username              = "${var.ssh_username}"
-    ssh_password              = "${var.ssh_password}"
+    ssh_username              = "kris"
+    ssh_password              = "supersecretpassword"
 
     # Raise the timeout, when installation takes longer
     ssh_timeout               = "30m"
     ssh_pty                   = true
-    ssh_handshake_attempts    = 15
+    ssh_handshake_attempts    = 20
   }
 
 build {
