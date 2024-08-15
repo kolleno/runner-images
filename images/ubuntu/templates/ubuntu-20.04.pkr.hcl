@@ -97,9 +97,9 @@ variable "install_password" {
 
     scsi_controller           = "virtio-scsi-pci"
 
-    cores                     = "1"
+    cores                     = "2"
     sockets                   = "1"
-    memory                    = "2048"
+    memory                    = "4096"
 
     cloud_init                = true
     cloud_init_storage_pool   = "local-lvm"
@@ -122,12 +122,11 @@ variable "install_password" {
     }
 
     boot_command = [
-      "<esc><wait>",
-      "e<wait>",
-      "<down><down><down><end>",
-      "<bs><bs><bs><bs><wait>",
-      "autoinstall ds=nocloud-net\\;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ ---<wait>",
-      "<f10><wait>"
+      "<esc><wait><esc><wait>",
+      "<f6><wait><esc><wait>",
+      "<bs><bs><bs><bs><bs>",
+      "autoinstall ds=nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ ",
+      "--- <enter>"
     ]
 
     boot                      = "c"
