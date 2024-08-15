@@ -124,7 +124,7 @@ variable "install_password" {
 
     http_directory            = "http"
 
-    ssh_username              = "kris"
+    ssh_username              = "admin"
     ssh_password              = "supersecretpassword"
 
     # Raise the timeout, when installation takes longer
