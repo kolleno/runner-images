@@ -140,9 +140,9 @@ build {
   ]
 
   # Waiting for Cloud-Init to finish
-#   provisioner "shell" {
-#     inline = ["cloud-init status --wait"]
-#   }
+  provisioner "shell" {
+    inline = ["cloud-init status --wait"]
+  }
 
   # Provisioning the VM Template for Cloud-Init Integration in Proxmox #1
   provisioner "shell" {

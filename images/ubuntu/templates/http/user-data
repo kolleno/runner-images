@@ -5,7 +5,7 @@ autoinstall:
   refresh-installer:
       update: false
   keyboard:
-    layout: de
+    layout: us
   ssh:
     install-server: true
     allow-pw: true
