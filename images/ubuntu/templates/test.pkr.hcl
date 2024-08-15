@@ -24,7 +24,7 @@ source "proxmox-iso" "pkr-ubuntu-jammy-1" {
   proxmox_url               = "${var.proxmox_api_url}"
   username                  = "${var.proxmox_api_token_id}"
   token                     = "${var.proxmox_api_token_secret}"
-  insecure_skip_tls_verify  = false
+  insecure_skip_tls_verify  = true
 
   node                      = "prx-prod-1"
   vm_id                     = "90001"
