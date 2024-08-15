@@ -26,7 +26,7 @@ source "proxmox-iso" "pkr-ubuntu-jammy-1" {
   token                     = "${var.proxmox_api_token_secret}"
   insecure_skip_tls_verify  = true
 
-  node                      = "prx-prod-1"
+  node                      = "server"
   vm_id                     = "90001"
   vm_name                   = "pkr-ubuntu-jammy-1"
   template_description      = "Ubuntu 22.04.4 LTS"
