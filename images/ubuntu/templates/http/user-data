@@ -35,7 +35,6 @@ autoinstall:
         shell: /bin/bash
         passwd: supersecretpassword
   packages:
-    - qemu-guest-agent
     - sudo
     - vim
     - zip
