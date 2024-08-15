@@ -35,10 +35,8 @@ autoinstall:
         shell: /bin/bash
         passwd: supersecretpassword
   packages:
+    - qemu-guest-agent
     - sudo
     - vim
     - zip
     - unzip
-  late-commands:
-    - curtin in-target -- apt-get update
-    - curtin in-target -- apt-get install qemu-guest-agent -y
