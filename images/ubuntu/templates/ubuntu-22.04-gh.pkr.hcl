@@ -90,7 +90,7 @@ source "proxmox-iso" "pkr-ubuntu-jammy-gh" {
   }
 
   disks {
-    disk_size               = "20G"
+    disk_size               = "100G"
     format                  = "raw"
     storage_pool            = "local-lvm"
     type                    = "virtio"
