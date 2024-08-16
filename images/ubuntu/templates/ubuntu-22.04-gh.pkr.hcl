@@ -47,17 +47,17 @@ variable "dockerhub_password" {
 
 variable "installer_script_folder" {
   type    = string
-  default = "/imagegeneration/installers"
+  default = "/home/admin/imagegeneration/installers"
 }
 
 variable "helper_script_folder" {
   type    = string
-  default = "/imagegeneration/helpers"
+  default = "/home/admin/imagegeneration/helpers"
 }
 
 variable "imagedata_file" {
   type    = string
-  default = "/imagegeneration/imagedata.json"
+  default = "/home/admin/imagegeneration/imagedata.json"
 }
 
 source "proxmox-iso" "pkr-ubuntu-jammy-gh" {
