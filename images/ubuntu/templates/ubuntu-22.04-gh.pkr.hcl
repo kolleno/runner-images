@@ -182,27 +182,25 @@ build {
     source      = "${path.root}/../scripts/build"
   }
 
-#   provisioner "shell" {
-#     execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-#     script          = "${path.root}/../scripts/build/configure-apt-mock.sh"
-#   }
+  provisioner "shell" {
+    execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
+    script          = "${path.root}/../scripts/build/configure-apt-mock.sh"
+  }
 
-  # Not sure if we need this actually
-#   provisioner "shell" {
-#     environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}","DEBIAN_FRONTEND=noninteractive"]
-#     execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-#     scripts          = [
-#       "${path.root}/../scripts/build/install-ms-repos.sh",
-#       "${path.root}/../scripts/build/configure-apt-sources.sh",
-#       "${path.root}/../scripts/build/configure-apt.sh"
-#     ]
-#   }
+  provisioner "shell" {
+    environment_vars = ["HELPER_SCRIPTS=${var.helper_script_folder}","DEBIAN_FRONTEND=noninteractive"]
+    execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
+    scripts          = [
+      "${path.root}/../scripts/build/install-ms-repos.sh",
+      "${path.root}/../scripts/build/configure-apt-sources.sh",
+      "${path.root}/../scripts/build/configure-apt.sh"
+    ]
+  }
 
-  # Not sure if we need this actually
-#   provisioner "shell" {
-#     execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-#     script          = "${path.root}/../scripts/build/configure-limits.sh"
-#   }
+  provisioner "shell" {
+    execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
+    script          = "${path.root}/../scripts/build/configure-limits.sh"
+  }
 
   provisioner "file" {
     destination = "${var.image_folder}"
