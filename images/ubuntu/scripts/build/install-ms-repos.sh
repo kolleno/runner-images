@@ -11,6 +11,6 @@ wget https://packages.microsoft.com/config/ubuntu/$os_label/packages-microsoft-p
 dpkg -i packages-microsoft-prod.deb
 
 # update
-apt-get install apt-transport-https ca-certificates curl software-properties-common
+apt-get install apt-transport-https ca-certificates curl software-properties-common -y
 apt-get update -y
-apt-get dist-upgrade
+#apt-get dist-upgrade
