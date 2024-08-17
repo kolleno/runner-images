@@ -80,7 +80,7 @@ source "proxmox-iso" "pkr-ubuntu-jammy-gh" {
 
   cores                     = "4"
   sockets                   = "1"
-  memory                    = "8092"
+  memory                    = "10000"
 
   cloud_init                = true
   cloud_init_storage_pool   = "local-lvm"
@@ -276,7 +276,7 @@ build {
       "${path.root}/../scripts/build/install-clang.sh",
 #       "${path.root}/../scripts/build/install-swift.sh",
       "${path.root}/../scripts/build/install-cmake.sh",
-      "${path.root}/../scripts/build/install-codeql-bundle.sh",
+#      "${path.root}/../scripts/build/install-codeql-bundle.sh",# eliminate
       "${path.root}/../scripts/build/install-container-tools.sh",
 #       "${path.root}/../scripts/build/install-dotnetcore-sdk.sh",
 #       "${path.root}/../scripts/build/install-firefox.sh",
@@ -285,7 +285,7 @@ build {
 #       "${path.root}/../scripts/build/install-gfortran.sh",
       "${path.root}/../scripts/build/install-git.sh",
       "${path.root}/../scripts/build/install-git-lfs.sh",
-      "${path.root}/../scripts/build/install-github-cli.sh",
+#      "${path.root}/../scripts/build/install-github-cli.sh",
 #       "${path.root}/../scripts/build/install-google-chrome.sh",
 #       "${path.root}/../scripts/build/install-google-cloud-cli.sh",
 #       "${path.root}/../scripts/build/install-haskell.sh",
